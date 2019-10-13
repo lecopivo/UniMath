@@ -9,13 +9,14 @@ Variable Ab : UU.
 Variable unit_object      : Ab.
 
 Variable hom_object       : Ab -> Ab -> Ab.
+Variable iso_object       : Ab -> Ab -> Ab.
 Variable biproduct_object : Ab -> Ab -> Ab.
 Variable tensor_object    : Ab -> Ab -> Ab.
 
 Notation I := unit_object.
-Notation "X --> Y" := (hom_object X Y).
-Notation "X ⊕ Y"   := (biproduct_object X Y).
-Notation "X ⊗ Y"   := (tensor_object X Y).
+Notation "X --> Y"  := (hom_object X Y).
+Notation "X ⊕ Y"    := (biproduct_object X Y).
+Notation "X ⊗ Y"    := (tensor_object X Y).
 
 (* Elements *)
 
@@ -23,7 +24,7 @@ Variable elem : Ab -> UU.
 Coercion elem : Ab >-> UU.
 
 Variable morphism_to_fun : forall {X Y : Ab},  (X --> Y) -> (X -> Y).
-Notation "f [ x ]" := (morphism_to_fun f x) (at level 5).
+Notation "f [ x ]" := (morphism_to_fun f x) (at level 5, right associativity).
 
 Axiom morphisms_equal_on_elements : forall {X Y : Ab}, forall {f g : X --> Y}, (forall (x : X), f[x]=g[x]) -> f = g.
 
@@ -134,9 +135,17 @@ Axiom on_elements_identity : forall (X : Ab), forall (x : X),
 Axiom on_elements_compose : forall {X Y Z}, forall (g : X --> Y), forall (f : Y --> Z), forall (x : X),
           (f ∘ g)[x] = f[g[x]].
 
-(* pair - there is no meaning fulld definition on elements *)
-(* eval *)
-Axiom on_elements_eval : forall (X Y : Ab), forall (f : X --> Y), forall (x : X),
+(* pair & eval *)
+(* 1 = ε ∘ F η *)
+(* eval ∘ (pair ⊗⊗ (identity Y)) = identity (X ⊗ Y) *)
+(* Axiom on_elements_pair_eval_adjunction_1 *)
+Axiom on_elements_pair_eval_adjunction_1 : forall {X Y Z : Ab}, forall (x : X ⊗ Y),
+      eval [(pair ⊗⊗ identity Y) [x]] = x.
+
+(* pair & eval *)
+(* 1 = G ε ∘ η *)
+(* (eval∘-) ∘ pair = identity (X --> Y) *)
+Axiom on_elements_pair_eval_adjunction_2 : forall {X Y Z : Ab}, forall (f : X --> Y), forall (x : X),
         eval[⟪f,x⟫] = f[x].
 
 (* swap_args *)
@@ -192,6 +201,17 @@ Axiom on_elements_group_op_morph : forall {X Y : Ab}, forall (f g : X --> Y), fo
 
 (* -------------- COMBINATORS IDENTITIES ---------------- *)
 
+Inductive Bool := true | false.
+
+Variable X Y : Ab.
+Variable f : X --> Y.
+Variable x : X.
+Variable y : Y.
+
+Axiom foo : forall {X : Ab}, X -> X.
+
+Compute f[x].
+
 Lemma identity_compose_identity : forall {X Y : Ab}, forall (f : X --> Y),
       f ∘ (identity X) = f
       /\
@@ -246,131 +266,131 @@ Proof.
 
 
 
-Lemma identity_adsf : forall {X Y : Ab},
-    eval' ∘ ((identity X) ⊗⊗ pair') = identity (X ⊗ Y).
-Proof.
-  intros.
-  repeat (unfold pair'; unfold eval'; unfold tsym; unfold uncurry).
-  repeat rewrite on_elements_compose.
-  repeat rewrite identity_compose_assoc.
+  Lemma identity_adsf : forall {X Y : Ab},
+      eval' ∘ ((identity X) ⊗⊗ pair') = identity (X ⊗ Y).
+  Proof.
+    intros.
+    repeat (unfold pair'; unfold eval'; unfold tsym; unfold uncurry).
+    repeat rewrite on_elements_compose.
+    repeat rewrite identity_compose_assoc.
 
 
-Lemma identity_adsf : forall {X Y : Ab},
-    (eval'∘-) ∘ pair' = identity (X-->Y).
-Proof.
-  intros.
-  repeat (unfold pair'; unfold eval'; unfold tsym; unfold uncurry).
-  repeat rewrite on_elements_compose.
+    Lemma identity_adsf : forall {X Y : Ab},
+        (eval'∘-) ∘ pair' = identity (X-->Y).
+    Proof.
+      intros.
+      repeat (unfold pair'; unfold eval'; unfold tsym; unfold uncurry).
+      repeat rewrite on_elements_compose.
 
-  repeat (rewrite on_elements_identity;
-          rewrite on_elements_compose;
-          rewrite on_elements_swap_args).
-
-
-
-Lemma identity_compose_post_compose : forall {W X Y Z : Ab}, forall (g : X --> Y), forall (f : Y --> Z),
-      (f∘-)∘(g∘-) = (f∘g)∘-W.
-Proof.
-  intros.
-  repeat (apply morphisms_equal_on_elements; intros).
-  repeat rewrite on_elements_swap_args.
-  repeat rewrite on_elements_compose.
-  repeat rewrite on_elements_swap_args.
-  repeat rewrite on_elements_compose.
-  auto.
-Qed.
+      repeat (rewrite on_elements_identity;
+              rewrite on_elements_compose;
+              rewrite on_elements_swap_args).
 
 
 
-Lemma identity_curry_uncurry : forall {X Y Z : Ab},
-    curry ∘ uncurry = identity (X --> (Y --> Z)).
-Proof.
-  intros.
-  repeat (apply morphisms_equal_on_elements; intros).
-  unfold uncurry.
-  unfold curry.
-  repeat rewrite on_elements_compose.
-  repeat rewrite on_elements_identity.
-  repeat rewrite on_elements_swap_args.
-  repeat rewrite on_elements_compose.
-  repeat rewrite on_elements_swap_args.
-  repeat rewrite on_elements_compose.
-  repeat rewrite on_elements_tensor_assoc.
-  repeat rewrite on_elements_eval.
-  repeat rewrite on_elements_compose.
-  repeat rewrite on_elements_tensor_fmap.
-  repeat rewrite on_elements_eval.
-  repeat rewrite on_elements_identity.
-  auto.
-Qed.
+      Lemma identity_compose_post_compose : forall {W X Y Z : Ab}, forall (g : X --> Y), forall (f : Y --> Z),
+              (f∘-)∘(g∘-) = (f∘g)∘-W.
+      Proof.
+        intros.
+        repeat (apply morphisms_equal_on_elements; intros).
+        repeat rewrite on_elements_swap_args.
+        repeat rewrite on_elements_compose.
+        repeat rewrite on_elements_swap_args.
+        repeat rewrite on_elements_compose.
+        auto.
+      Qed.
 
-Lemma idenity_uncurry_curr : forall {X Y Z : Ab},
-    uncurry ∘ curry = identity (X ⊗ Y --> Z).
-Proof.
-  intros.
-  unfold uncurry.
-  unfold curry.
-  repeat rewrite <- identity_compose_assoc.
-  repeat rewrite indentity_compose_post_compose.
-  repeat (apply morphisms_equal_on_elements; intros).
-  repeat rewrite on_elements_compose.
-  repeat rewrite on_elements_identity.
-  repeat rewrite on_elements_swap_args.
-  repeat rewrite on_elements_compose.
-  repeat rewrite <- identity_compose_assoc.
-  repeat rewrite on_elements_compose.
-  repeat rewrite on_elements_identity.
-  repeat rewrite on_elements_compose.
-  repeat rewrite on_elements_tsym.
-  repeat rewrite on_elements_swap_args.
 
-  repeat rewrite on_elements_compose.
-  repeat rewrite on_elements_curry.
-  repeat rewrite on_elements_compose.
 
-  repeat rewrite on_elements_eval.
-  repeat rewrite on_elements_identity.
-  auto.
+      Lemma identity_curry_uncurry : forall {X Y Z : Ab},
+          curry ∘ uncurry = identity (X --> (Y --> Z)).
+      Proof.
+        intros.
+        repeat (apply morphisms_equal_on_elements; intros).
+        unfold uncurry.
+        unfold curry.
+        repeat rewrite on_elements_compose.
+        repeat rewrite on_elements_identity.
+        repeat rewrite on_elements_swap_args.
+        repeat rewrite on_elements_compose.
+        repeat rewrite on_elements_swap_args.
+        repeat rewrite on_elements_compose.
+        repeat rewrite on_elements_tensor_assoc.
+        repeat rewrite on_elements_eval.
+        repeat rewrite on_elements_compose.
+        repeat rewrite on_elements_tensor_fmap.
+        repeat rewrite on_elements_eval.
+        repeat rewrite on_elements_identity.
+        auto.
+      Qed.
 
-Variable curry : forall {X Y Z : Ab}, (X ⊗ Y --> Z) --> (X --> (Y --> Z)).
-Variable eval  : forall {X Y : Ab}, (X --> Y) ⊗ X --> Y.
+      Lemma idenity_uncurry_curr : forall {X Y Z : Ab},
+          uncurry ∘ curry = identity (X ⊗ Y --> Z).
+      Proof.
+        intros.
+        unfold uncurry.
+        unfold curry.
+        repeat rewrite <- identity_compose_assoc.
+        repeat rewrite indentity_compose_post_compose.
+        repeat (apply morphisms_equal_on_elements; intros).
+        repeat rewrite on_elements_compose.
+        repeat rewrite on_elements_identity.
+        repeat rewrite on_elements_swap_args.
+        repeat rewrite on_elements_compose.
+        repeat rewrite <- identity_compose_assoc.
+        repeat rewrite on_elements_compose.
+        repeat rewrite on_elements_identity.
+        repeat rewrite on_elements_compose.
+        repeat rewrite on_elements_tsym.
+        repeat rewrite on_elements_swap_args.
 
-(* Variable pair : forall {X Y : Ab}, X --> (Y --> X ⊗ Y). *)
+        repeat rewrite on_elements_compose.
+        repeat rewrite on_elements_curry.
+        repeat rewrite on_elements_compose.
 
-(* pair and eval are counit and unit of adjunction between tensor and hom functors *)
-(* pair will be defined as currying of (identity (X⊗Y)) *)
+        repeat rewrite on_elements_eval.
+        repeat rewrite on_elements_identity.
+        auto.
 
-(*  _                                           _         _ *)
-(* | |_ ___ _ _  ___ ___ _ _   _ __ _ _ ___  __| |_  _ __| |_ *)
-(* |  _/ -_) ' \(_-</ _ \ '_| | '_ \ '_/ _ \/ _` | || / _|  _| *)
-(*  \__\___|_||_/__/\___/_|   | .__/_| \___/\__,_|\_,_\__|\__| *)
-(*                            |_| *)
+        Variable curry : forall {X Y Z : Ab}, (X ⊗ Y --> Z) --> (X --> (Y --> Z)).
+        Variable eval  : forall {X Y : Ab}, (X --> Y) ⊗ X --> Y.
 
-Variable tsym : forall {X Y : Ab}, (X ⊗ Y) --> (Y ⊗ X).
-Variable tensor_fmap : forall {X X' Y Y' : Ab}, (X --> Y) ⊗ (X' --> Y') --> (X ⊗ X' --> Y ⊗ Y').
+        (* Variable pair : forall {X Y : Ab}, X --> (Y --> X ⊗ Y). *)
 
-Variable tensor_assoc  : forall {X Y Z : Ab}, (X ⊗ Y) ⊗ Z --> X ⊗ (Y ⊗ Z).
-Variable tensor_unitor : forall {X : Ab}, I ⊗ X --> X.
+        (* pair and eval are counit and unit of adjunction between tensor and hom functors *)
+        (* pair will be defined as currying of (identity (X⊗Y)) *)
 
-(*  _    _                  _         _ *)
-(* | |__(_)_ __ _ _ ___  __| |_  _ __| |_ *)
-(* | '_ \ | '_ \ '_/ _ \/ _` | || / _|  _| *)
-(* |_.__/_| .__/_| \___/\__,_|\_,_\__|\__| *)
-(*        |_| *)
+        (*  _                                           _         _ *)
+        (* | |_ ___ _ _  ___ ___ _ _   _ __ _ _ ___  __| |_  _ __| |_ *)
+        (* |  _/ -_) ' \(_-</ _ \ '_| | '_ \ '_/ _ \/ _` | || / _|  _| *)
+        (*  \__\___|_||_/__/\___/_|   | .__/_| \___/\__,_|\_,_\__|\__| *)
+        (*                            |_| *)
 
-Variable biproduct_pair : forall {X Y : Ab}, X -> Y -> X ⊕ Y.
+        Variable tsym : forall {X Y : Ab}, (X ⊗ Y) --> (Y ⊗ X).
+        Variable tensor_fmap : forall {X X' Y Y' : Ab}, (X --> Y) ⊗ (X' --> Y') --> (X ⊗ X' --> Y ⊗ Y').
 
-Variable proj1 : forall {X Y : Ab}, X ⊕ Y --> X.
-Variable proj2 : forall {X Y : Ab}, X ⊕ Y --> Y.
-Variable injc1 : forall {X Y : Ab}, X --> X ⊕ Y.
-Variable injc2 : forall {X Y : Ab}, Y --> X ⊕ Y.
+        Variable tensor_assoc  : forall {X Y Z : Ab}, (X ⊗ Y) ⊗ Z --> X ⊗ (Y ⊗ Z).
+        Variable tensor_unitor : forall {X : Ab}, I ⊗ X --> X.
 
-(*                                                  _   _ *)
-(*  __ _ _ _ ___ _  _ _ __   ___ _ __  ___ _ _ __ _| |_(_)___ _ _  ___ *)
-(* / _` | '_/ _ \ || | '_ \ / _ \ '_ \/ -_) '_/ _` |  _| / _ \ ' \(_-< *)
-(* \__, |_| \___/\_,_| .__/ \___/ .__/\___|_| \__,_|\__|_\___/_||_/__/ *)
-(* |___/             |_|        |_| *)
+        (*  _    _                  _         _ *)
+        (* | |__(_)_ __ _ _ ___  __| |_  _ __| |_ *)
+        (* | '_ \ | '_ \ '_/ _ \/ _` | || / _|  _| *)
+        (* |_.__/_| .__/_| \___/\__,_|\_,_\__|\__| *)
+        (*        |_| *)
 
-Variable group_zero : forall {X : Ab}, X.
-Variable group_inv  : forall {X : Ab}, X --> X.
-Variable group_op   : forall {X : Ab}, X ⊕ X --> X.
+        Variable biproduct_pair : forall {X Y : Ab}, X -> Y -> X ⊕ Y.
+
+        Variable proj1 : forall {X Y : Ab}, X ⊕ Y --> X.
+        Variable proj2 : forall {X Y : Ab}, X ⊕ Y --> Y.
+        Variable injc1 : forall {X Y : Ab}, X --> X ⊕ Y.
+        Variable injc2 : forall {X Y : Ab}, Y --> X ⊕ Y.
+
+        (*                                                  _   _ *)
+        (*  __ _ _ _ ___ _  _ _ __   ___ _ __  ___ _ _ __ _| |_(_)___ _ _  ___ *)
+        (* / _` | '_/ _ \ || | '_ \ / _ \ '_ \/ -_) '_/ _` |  _| / _ \ ' \(_-< *)
+        (* \__, |_| \___/\_,_| .__/ \___/ .__/\___|_| \__,_|\__|_\___/_||_/__/ *)
+        (* |___/             |_|        |_| *)
+
+        Variable group_zero : forall {X : Ab}, X.
+        Variable group_inv  : forall {X : Ab}, X --> X.
+        Variable group_op   : forall {X : Ab}, X ⊕ X --> X.
