@@ -5,30 +5,44 @@ Require Import UniMath.CategoryTheory.All.
 Require Import UniMath.MoreFoundations.Notations.
 Require Import UniMath.CategoryTheory.limits.products.
 
+Inductive direction := covar | contr.
+
 Inductive Cat :=
-| SSet   : Cat
-| Diff   : Cat
-| Aff    : Cat
-| Vec    : Cat
-| Field  : Cat.
+| SSet : Cat
+| Smooth : Cat
+| Aff : Cat
+| Vec : Cat
+| Ab  : Cat
+| Fun : direction -> Cat -> Cat -> Cat.
 
-Inductive Ob : Cat -> Type :=
-| indexed_object : forall (C : Cat), nat -> Ob C
-| hom_object     : forall (C : Cat), Ob C -> Ob C -> Ob C
+Notation "C = d => D"  := (Fun d C D) (at level 55).
 
-| vec_tensor_obj : Ob Vec -> Ob Vec -> Ob Vec
-| aff_tensor_obj : Ob Vec -> Ob Vec -> Ob Vec
+Inductive ob : Cat -> Type :=
+| indexed_object : forall (C : Cat), nat -> ob C
 
-| product_obj    : Ob SSet -> Ob SSet -> Ob SSet
-| biproduct_obj  : Ob Vec -> Ob Vec  -> Ob Vec
+| hom            : forall (C : Cat),   ob (C =contr=> (C =covar=> SSet))
 
-| 𝕆: Ob Vec
-| ℝ : Ob Field
+| functor_map    : forall {C D : Cat}, forall {d : direction}, ob (C =d=> D) -> (ob C -> ob D).
 
-| forget_Field_to_Vec : Ob Field -> Ob Vec
-| forget_Vec_to_Aff   : Ob Vec   -> Ob Aff
-| forget_Aff_to_Diff  : Ob Aff   -> Ob Diff
-| forget_Diff_to_SSet : Ob Diff  -> Ob SSet.
+Coercion ob: Cat >-> Sortclass.
+
+Notation "F ⦃ X ⦄" := (functor_map F X) (at level 5).
+Notation "X --> Y" := ((hom _)⦃X⦄⦃Y⦄).
+Definition X := indexed_object SSet 0.
+Definition Y := indexed_object SSet 1.
+
+Check X.
+Check Y.
+
+Check (hom SSet)⦃X⦄⦃Y⦄.
+Check X --> Y.
+
+Inductive elem : forall {C : Cat}, C -> Type :=
+| indexed_element : forall (C : Cat), forall (X : C), elem X
+
+| morphism_map : forall (C : Cat), forall (X Y : C), elem (X --> Y) -> elem X -> elem Y
+| functor_fmap : forall {C D : Cat}, forall {d : direction}, forall (F : C =d=> D), forall {X Y : C}, forall (f : elem (X --> Y)), elem (F⦃X⦄ --> F⦃Y⦄).
+
 
 Notation "X - C -> Y" := (hom_object C X Y) (at level 55).
 Notation "X ⊗ Y" := (vec_tensor_obj X Y).
@@ -38,6 +52,11 @@ Notation "X ⊕ Y" := (biproduct_obj X Y).
 
 Coercion Ob: Cat >-> Sortclass.
 
-Inductive elem : forall (C : Cat), Ob C -> Type :=
-  | hoh : forall (C : Cat), elem C (indexed_object C 0).
-  | zero :
+
+
+Inductive Category : nat -> Type :=
+| Cat2 : Category 3
+
+with Object : forall (n : nat), Category n -> Type :=
+
+  | indexed_object : forall (n : nat), forall (C : Category n), nat -> Object C.
