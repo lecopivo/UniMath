@@ -277,3 +277,6 @@ Proof.
   repeat rewrite on_elements_eval.
   auto.
 Qed.
+
+
+Notation "A ⊗
