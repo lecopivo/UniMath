@@ -5,39 +5,108 @@ Require Import UniMath.CategoryTheory.All.
 Require Import UniMath.MoreFoundations.Notations.
 Require Import UniMath.CategoryTheory.limits.products.
 
+Print Sorted Universes.
+
 Inductive Cat :=
-| SSet   : Cat
 | Diff   : Cat
 | Aff    : Cat
-| Vec    : Cat
-| Field  : Cat.
+| Vec    : Cat.
 
 Inductive Ob : Cat -> Type :=
 | indexed_object : forall (C : Cat), nat -> Ob C
-| hom_object     : forall (C : Cat), Ob C -> Ob C -> Ob C
+| hom_object     : forall {C : Cat}, Ob C -> Ob C -> Ob C
 
-| vec_tensor_obj : Ob Vec -> Ob Vec -> Ob Vec
-| aff_tensor_obj : Ob Vec -> Ob Vec -> Ob Vec
+| tensor_obj   : forall {C : Cat}, Ob C -> Ob C -> Ob C
+| product_obj  : forall {C : Cat}, Ob C -> Ob C -> Ob C
+| tensor_unit  : forall {C : Cat}, Ob C
 
-| product_obj    : Ob SSet -> Ob SSet -> Ob SSet
-| biproduct_obj  : Ob Vec -> Ob Vec  -> Ob Vec
+| tangent_bundle : Ob Diff -> Ob Diff
 
 | 𝕆: Ob Vec
-| ℝ : Ob Field
+| ℝ : Ob Vec
 
-| forget_Field_to_Vec : Ob Field -> Ob Vec
-| forget_Vec_to_Aff   : Ob Vec   -> Ob Aff
-| forget_Aff_to_Diff  : Ob Aff   -> Ob Diff
-| forget_Diff_to_SSet : Ob Diff  -> Ob SSet.
+| forget_Vec_to_Aff   : Ob Vec -> Ob Aff
+| forget_Aff_to_Diff  : Ob Aff -> Ob Diff.
 
-Notation "X - C -> Y" := (hom_object C X Y) (at level 55).
-Notation "X ⊗ Y" := (vec_tensor_obj X Y).
-Notation "X ⊠ Y" := (aff_tensor_obj X Y).
+Notation "X --> Y" := (hom_object X Y) (at level 55).
+Notation "X ⊗ Y" := (tensor_obj  X Y).
 Notation "X × Y" := (product_obj X Y).
-Notation "X ⊕ Y" := (biproduct_obj X Y).
 
 Coercion Ob: Cat >-> Sortclass.
 
-Inductive elem : forall (C : Cat), Ob C -> Type :=
-  | hoh : forall (C : Cat), elem C (indexed_object C 0).
-  | zero :
+(* Does this work? - I want automatic application of these forgetful functors. *)
+Coercion forget_Vec_to_Aff:   Ob >-> Ob.
+Coercion forget_Aff_to_Diff:  Ob >-> Ob.
+
+Inductive elem : forall {C : Cat}, Ob C -> Type :=
+| indexed_element  : forall {C : Cat}, forall (X : C) , nat -> elem X
+| indexed_morphism : forall {C : Cat}, forall (X Y : C), nat -> elem (X --> Y)
+
+| morphism_map : forall {C : Cat}, forall {X Y : C}, elem (X --> Y) -> (elem X -> elem Y)
+
+(* ----------------- Combinators ----------------- *)
+(* Basic ones *)
+| identity : forall {C : Cat}, forall {X : C}, elem (X --> X)
+| compose  : forall {C : Cat}, forall {X Y Z : C}, elem ((X --> Y) --> ((Y --> Z) --> (X --> Z)))
+
+(* Vector Tensor product *)
+| tensor_fmap   : forall {X X' Y Y' : Vec},
+    elem ((X --> Y) --> ((X' --> Y') --> (X ⊗ X' --> Y ⊗ Y')))
+| tensor_assoc  : forall {X Y Z : Vec},
+    elem ((X ⊗ Y) ⊗ Z --> X ⊗ (Y ⊗ Z))
+| tensor_unitor : forall {X : Vec},
+    elem (tensor_unit ⊗ X --> X)
+
+(* Affine tensor has projections *)
+| aproj1 : forall {X Y : Aff},
+   elem (X ⊗ Y --> X)
+| aproj2 : forall {X Y : Aff},
+    elem (X ⊗ Y --> Y)
+
+(* Diff tensor has projections and diagonal *)
+| dproj1 : forall {X Y : Diff},
+    elem (X ⊗ Y --> X)
+| dproj2 : forall {X Y : Diff},
+    elem (X ⊗ Y --> Y)
+| tdiag : forall {X Y : Diff},
+    elem (X --> X ⊗ X)
+
+(* Cartesian product *)
+| product_fmap : forall {C : Cat}, forall {X X' Y Y' : C},
+    elem ((X --> Y) --> ((X' --> Y') --> (X × X' --> Y × Y')))
+| proj1 : forall {C : Cat}, forall {X Y : C},
+    elem ((X × Y) --> X)
+| proj2 : forall {C : Cat}, forall {X Y : C},
+    elem ((X × Y) --> Y)
+| cdiag : forall {C : Cat}, forall {X : C},
+    elem (X --> X × X)
+
+(* Vector product has injections *)
+| injc1 : forall {X Y : Vec},
+    elem (X --> X × Y)
+| injc2 : forall {X Y : Vec},
+    elem (Y --> X × Y)
+
+(* Closed monoidal *)
+| pair      : forall {C : Cat}, forall {X Y : C},
+    elem (X --> (Y --> (X ⊗ Y)))
+| eval      : forall {C : Cat}, forall {X Y : C},
+    elem ((X --> Y) ⊗ X --> Y)
+| swap_args : forall {C : Cat}, forall {X Y Z : C},
+      elem ((X --> (Y --> Z)) --> (Y --> (X --> Z)))
+
+(* Group operations *)
+| vec_zero : forall {X : Vec},
+    elem X
+| vec_neg  : forall {X : Vec},
+    elem (X --> X)
+| vec_add   : forall {X : Vec},
+    elem (X × X --> X)
+| vec_mul   : forall {X : Vec},
+    elem (tensor_unit × X --> X)
+
+(* Differentiation *)
+| tangent_map : forall {X Y : Vec},
+    elem ((X --> Y) --> (X × X --> Y × Y))
+| grad : ,
+    elem (tangent_bundle X --> X).
