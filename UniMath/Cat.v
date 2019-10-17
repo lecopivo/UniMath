@@ -98,6 +98,7 @@ Inductive elem : forall {C : Cat}, Ob C -> Type :=
     elem (X ~~> X ⊗ X)
 
 (* Vector operations *)
+| reals_one : elem ℝ
 | vec_zero : forall {X : Vec},
     elem X
 | vec_neg  : forall {X : Vec},
@@ -125,6 +126,7 @@ Notation  "x + y"    := vec_add[(x,y)].
 Notation  "s · x"    := vec_mul[(s,x)].
 Notation   "- x"     := vec_neg[x].
 Notation    "0"      := vec_zero.
+Notation    "1"      := reals_one.
 
 Notation "-∘ g" := compose[g]                 (at level 50).
 Notation "f ∘-" := swap_args[compose][f]      (at level 50).
@@ -138,12 +140,12 @@ Notation "f ⊗-" := tensor_fmap[f]             (at level 50).
 (* Definition tsym  {X Y : Ab} : X ⊗ Y --> Y ⊗ X := uncurry[pair']. *)
 (* Definition eval' {X Y : Ab} : X ⊗ (X --> Y) --> Y := eval ∘ tsym. *)
 
-Notation curry   := ((eval ∘- ∘-) ∘ (tensor_assoc ∘- ∘-) ∘ (pair ∘-) ∘ pair).
-Notation uncurry := ((eval∘-) ∘ (-⊗ identity)).
+Notation curry   := ((teval ∘- ∘-) ∘ (tensor_assoc ∘- ∘-) ∘ (tpair ∘-) ∘ tpair).
+Notation uncurry := ((teval∘-) ∘ (-⊗ identity)).
 
-Notation pair' := swap_args[pair].
-Notation tsym  := uncurry[pair'].
-Notation eval' := (eval ∘ tsym).
+Notation tpair' := swap_args[tpair].
+Notation tsym  := uncurry[tpair'].
+Notation teval' := (teval ∘ tsym).
 
 Definition zero (X : Vec)  := @vec_zero X.
 
@@ -267,5 +269,38 @@ Axiom on_elements_vec_add_assoc : forall {X : Vec}, forall (x y z: X),
 Axiom on_elements_vec_add_commut : forall {X : Vec}, forall (x y: X),
       x + y = y + x.
 
-Axiom on_elements_group_op_morph : forall {C : Cat}, forall {X Y : Vec}, forall (f g : hom C X Y), forall (x : X),
+Axiom on_elements_vec_mul : forall {X : Vec}, forall (x y : X), forall (s : ℝ),
+        s · (x + y) = s · x + s · y.
+
+Axiom on_elements_vec_mul_zero : forall {X : Vec}, forall (x : X),
+      0 · x = 0.
+
+Axiom on_elements_vec_mul_one : forall {X : Vec}, forall (x y : X), forall (s : ℝ),
+        1 · x = x.
+
+Axiom on_elements_vec_add_morph : forall {C : Cat}, forall {X Y : Vec}, forall (f g : hom C X Y), forall (x : X),
           (f + g)[x] = f[x] + g[x].
+
+Axiom on_elements_vec_mul_morph : forall {C : Cat}, forall {X Y : Vec}, forall (f : hom C X Y), forall (x : X), forall (s : ℝ),
+            (s · f)[x] = s · f[x].
+
+(* ----------------------- Vector Morphism rules ----------------------------- *)
+
+Axiom on_elements_vec_morph_add : forall {X Y : Vec}, forall (f : X --> Y), forall (x y : X),
+        f[x + y] = f[x] + f[y].
+
+Axiom on_elements_vec_morph_mul : forall {X Y : Vec}, forall (f : X --> Y), forall (x : X), forall (s : ℝ),
+          f[s · x] = s · f[x].
+
+(* ----------------------- Doodle -------------------------------- *)
+
+Variable X Y : Vec.
+
+(* Notation curry   := ((eval ∘- ∘-) ∘ (tensor_assoc ∘- ∘-) ∘ (pair ∘-) ∘ pair). *)
+(* Notation uncurry := ((eval∘-) ∘ (-⊗ identity)). *)
+
+(* Notation pair' := swap_args[pair]. *)
+(* Notation tsym  := uncurry[pair']. *)
+(* Notation eval' := (eval ∘ tsym). *)
+
+Check  (pair ∘-) ∘ pair.
