@@ -20,6 +20,8 @@ Inductive Ob : Cat -> Type :=
 | 𝕆: Ob Vec
 | ℝ : Ob Vec.
 
+Notation "X ~ C ~> Y" := (hom C X Y) (at level 55).
+
 Notation "X --> Y" := (hom Vec  X Y) (at level 55).
 Notation "X ~~> Y" := (hom Diff X Y) (at level 55).
 Notation "X ⊗ Y"   := (tensor_obj  X Y).
@@ -35,6 +37,8 @@ Definition cat_or (gC fC : Cat) : Cat :=
             | Vec => Vec
             end
   end.
+
+Notation "C ∨ D" := (cat_or C D).
 
 Inductive elem : forall {C : Cat}, Ob C -> Type :=
 | indexed_element  : forall (X : Vec) , nat -> elem X
@@ -294,7 +298,10 @@ Axiom on_elements_vec_morph_mul : forall {X Y : Vec}, forall (f : X --> Y), fora
 
 (* ----------------------- Doodle -------------------------------- *)
 
-Variable X Y : Vec.
+Variable X Y Z: Vec.
+
+Variable g : X --> Y.
+Variable f : Y --> Z.
 
 (* Notation curry   := ((eval ∘- ∘-) ∘ (tensor_assoc ∘- ∘-) ∘ (pair ∘-) ∘ pair). *)
 (* Notation uncurry := ((eval∘-) ∘ (-⊗ identity)). *)
@@ -303,4 +310,22 @@ Variable X Y : Vec.
 (* Notation tsym  := uncurry[pair']. *)
 (* Notation eval' := (eval ∘ tsym). *)
 
-Check  (pair ∘-) ∘ pair.
+Check (@identity (X⊗Y)).
+
+Check (f ∘-)[g].
+Check f ∘ g.
+
+Lemma curry_identity : forall (X Y : Vec), curry[(@identity (X⊗Y))] = tpair.
+Proof.
+  intros.
+  repeat (apply morphisms_equal_on_elements; intros).
+  repeat rewrite on_elements_compose.
+  repeat rewrite on_elements_swap_args.
+  repeat rewrite on_elements_compose.
+  repeat rewrite on_elements_swap_args.
+  repeat rewrite on_elements_compose.
+  rewrite on_elements_tensor_assoc.
+  rewrite on_elements_teval.
+  rewrite on_elements_identity.
+  auto.
+Qed.
